@@ -3,10 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Windows;
 
 namespace Journaling
 {
-    class FileInfo
+    public class FileInfo
     {
         public String FileName;
         public DateTime LastEdit;
@@ -20,7 +22,7 @@ namespace Journaling
         }
     }
 
-    class Dispatcher
+    public class Dispatcher
     {
         public const string LOGGING_FILE = "LOGS.txt";
 
@@ -57,8 +59,14 @@ namespace Journaling
             {
                 Directory.CreateDirectory(FilesDirectory);
             }
+            MessageBoxResult res = MessageBoxResult.Yes ;
             var LogsExist = File.Exists(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE));
             var FilesExist = File.Exists(ExectNameGeneratorProgramFilesDirectory(FILES_INFO));
+            if (LogsExist && FilesExist)
+            {
+                res = MessageBox.Show("Найденны данные предыдущей сесии. Загрузить их?", "Старая сессия", MessageBoxButton.YesNo);
+                
+            }
             
             if (LogsExist)
             {
@@ -85,6 +93,7 @@ namespace Journaling
             {
                 foreach (var VarFile in Files)
                 {
+                    try { 
                     if (!File.Exists(ExectNameGeneratorFilesDirectory(VarFile.Key))){
                         throw new Exception($"File { VarFile.Key} was deleted dy forigen");
                     }
@@ -96,19 +105,110 @@ namespace Journaling
                             throw new Exception($"File { VarFile.Key} was edited by forigen");
                         }
                     }
+                    }
+                    catch
+                    {
+                        MessageBox.Show($"Файл {VarFile.Key} был изменен извне, изменеиня будут сброшены и восстановится версия на момент прошлой сесиии {VarFile.Value.LastEdit.ToString()}");
+                        File.Copy(ExectNameGeneratorBackupDirectory(VarFile.Key), ExectNameGeneratorFilesDirectory(VarFile.Key),true);
+                        Journal.AddEvent(VarFile.Key, EventTypes.RepairedFromBackup, EventStatus.Started);
+                        Journal.AddEvent(VarFile.Key, EventTypes.RepairedFromBackup, EventStatus.Done,"",Journal.GetLastEvent(VarFile.Key).Uuid);
+                    }
 
 
                 }
             }
-            Journal.GetStartedEvents();
+            
+
+
+            if (res == MessageBoxResult.No)
+            {
+                Directory.Delete(BackupFilesDirectory,true);
+                Directory.Delete(FilesDirectory,true);
+                File.Delete(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE));
+                File.Delete(ExectNameGeneratorProgramFilesDirectory(FILES_INFO));
+                Journal = new JournalStructure();
+                Files = new Dictionary<string, FileInfo>();
+                Directory.CreateDirectory(BackupFilesDirectory);
+                Directory.CreateDirectory(FilesDirectory);
+                Journal.AddEvent(LOGGING_FILE, EventTypes.OpenProgramAsNew, EventStatus.Started);
+                Journal.AddEvent(LOGGING_FILE, EventTypes.OpenProgramAsNew, EventStatus.Done,"",Journal.GetLastEvent(LOGGING_FILE).Uuid);
+            }
+            else
+            {
+                Journal.AddEvent(LOGGING_FILE, EventTypes.OpenProgramFromSave, EventStatus.Started);
+                Journal.AddEvent(LOGGING_FILE, EventTypes.OpenProgramFromSave, EventStatus.Done, "", Journal.GetLastEvent(LOGGING_FILE).Uuid);
+            }
+            CheckLogsCorectness();
 
 
 
         }
-        public void CheckLogsCorectness()
+        public string getlast(string str)
         {
 
+            return str.Substring(str.LastIndexOf("/")+1);
+        }
+        public void CheckLogsCorectness()
+        {
+            var wrongs = Journal.GetStartedEvents();
+            foreach (var err in wrongs)
+            {
+                var rs = MessageBox.Show($"Не завершена операция {err.Type} над файлом {err.FileName}. Завершить ее?", "", MessageBoxButton.YesNo);
+                if (rs == MessageBoxResult.Yes)
+                {
+                    switch (err.Type)
+                    {
+                        case EventTypes.Create:
+                            {
 
+                                Journal.AddEvent(err.FileName, err.Type, EventStatus.Repaired, "", err.Uuid);
+                                Create(getlast(err.FileName));
+                                break;
+                            }
+                        case EventTypes.Delete:
+                            {
+
+                                Journal.AddEvent(err.FileName, err.Type, EventStatus.Repaired, "", err.Uuid);
+                                Delete(getlast(err.FileName));
+                                break;
+                            }
+                        case EventTypes.Edit:
+                            {
+
+                                Journal.AddEvent(err.FileName, err.Type, EventStatus.Repaired, err.Addition, err.Uuid);
+                                Edit(getlast(err.FileName), err.Addition);
+                                break;
+                            }
+                    }
+                }
+                else
+                {
+                    switch (err.Type)
+                    {
+                        case EventTypes.Create:
+                            {
+
+                                Journal.AddEvent(err.FileName, err.Type, EventStatus.Declined, "", err.Uuid);
+                                
+                                break;
+                            }
+                        case EventTypes.Delete:
+                            {
+
+                                Journal.AddEvent(err.FileName, err.Type, EventStatus.Declined, "", err.Uuid);
+                                
+                                break;
+                            }
+                        case EventTypes.Edit:
+                            {
+
+                                Journal.AddEvent(err.FileName, err.Type, EventStatus.Declined, err.Addition, err.Uuid);
+                                
+                                break;
+                            }
+                    }
+                }
+            }
 
         }
         public string ExectNameGeneratorFilesDirectory(string FileName)
@@ -123,7 +223,7 @@ namespace Journaling
         {
             return $"{ProgramFilesDirectory}/{FileName}";
         }
-        public void Create(String FileName)
+        public void Create(String FileName,int freeze=0)
         {
             var ExectFileName = ExectNameGeneratorFilesDirectory(FileName);
             if (File.Exists(ExectFileName))
@@ -131,16 +231,20 @@ namespace Journaling
                 throw new Exception($"File {FileName} Allready exists");
             };
             Journal.AddEvent(ExectFileName, EventTypes.Create, EventStatus.Started);
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE), JsonConvert.SerializeObject(Journal));
 
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(FILES_INFO), JsonConvert.SerializeObject(Files));
+
+            Thread.Sleep(freeze);
             var EventUuid = Journal.GetLastEvent(ExectFileName).Uuid;
             var Created = File.Create(ExectFileName);
             Created.Close();
             Files.Add(FileName, new FileInfo(ExectFileName, DateTime.Now, ComputeMD5Checksum(ExectFileName)));
             Journal.AddEvent(ExectFileName, EventTypes.Create, EventStatus.Done, "Nothing Strange",EventUuid);
-
+            MessageBox.Show("Done");
 
         }
-        public void Delete(String FileName)
+        public void Delete(String FileName, int freeze = 0)
         {
             var ExectFileName = ExectNameGeneratorFilesDirectory(FileName);
             if (!File.Exists(ExectFileName))
@@ -149,6 +253,11 @@ namespace Journaling
             };
             Journal.AddEvent(ExectFileName, EventTypes.Delete, EventStatus.Started);
             var EventUuid = Journal.GetLastEvent(ExectFileName).Uuid;
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE), JsonConvert.SerializeObject(Journal));
+
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(FILES_INFO), JsonConvert.SerializeObject(Files));
+
+            Thread.Sleep(freeze);
 
 
             File.Delete(ExectFileName);
@@ -156,7 +265,7 @@ namespace Journaling
             Journal.AddEvent(ExectFileName, EventTypes.Delete, EventStatus.Done, "Nothing Strange", EventUuid);
         }
         
-        public String Read(String FileName)
+        public String Read(String FileName, int freeze = 0)
         {
             var ExectFileName = ExectNameGeneratorFilesDirectory(FileName);
             if (!File.Exists(ExectFileName))
@@ -165,15 +274,21 @@ namespace Journaling
             };
             return File.ReadAllText(ExectFileName);
         }
-        public void Edit(String FileName, String NewText)
+        public void Edit(String FileName, String NewText,int freeze=0)
         {
             var ExectFileName = ExectNameGeneratorFilesDirectory(FileName);
             if (!File.Exists(ExectFileName))
             {
                 throw new Exception($"File {FileName} doesn't exist");
             };
-            Journal.AddEvent(ExectFileName, EventTypes.Edit, EventStatus.Started);
+            Journal.AddEvent(ExectFileName, EventTypes.Edit, EventStatus.Started,NewText);
             var EventUuid = Journal.GetLastEvent(ExectFileName).Uuid;
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE), JsonConvert.SerializeObject(Journal));
+
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(FILES_INFO), JsonConvert.SerializeObject(Files));
+
+            Thread.Sleep(freeze);
+
 
             File.WriteAllText(ExectFileName, NewText);
             Files[FileName] = new FileInfo(FileName, DateTime.Now, ComputeMD5Checksum(ExectFileName));
@@ -187,11 +302,10 @@ namespace Journaling
                 File.Copy(ExectNameGeneratorFilesDirectory(VarFile.Key), ExectNameGeneratorBackupDirectory(VarFile.Key),true);
 
             }
-            var s = new JsonSerializerSettings();
-            s.CheckAdditionalContent = true;
-            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE), JsonConvert.SerializeObject(Journal, s));
+            
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE), JsonConvert.SerializeObject(Journal));
 
-            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(FILES_INFO), JsonConvert.SerializeObject(Files, s));
+            File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(FILES_INFO), JsonConvert.SerializeObject(Files));
             
         }
     }

@@ -1,0 +1,28 @@
+﻿<Window x:Class="Journaling_Front.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Journaling_Front"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="334.5" Width="385" ResizeMode="NoResize">
+    <Grid>
+        <DockPanel>
+            <DataGrid Name="FilesViewer" Width="148">
+
+            </DataGrid>
+            <TabControl>
+                <TabItem>
+                    <TabItem.Header>
+                        <TextBlock>Создание файлов</TextBlock>
+                    </TabItem.Header>
+                </TabItem>
+                <TabItem>
+                    <TabItem.Header>
+                        <TextBlock>Редактирование файлов</TextBlock>
+                    </TabItem.Header>
+                </TabItem>
+            </TabControl>
+        </DockPanel>
+    </Grid>
+</Window>

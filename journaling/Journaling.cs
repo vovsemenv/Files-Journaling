@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Windows;
 
 namespace Journaling
 {
@@ -12,13 +13,20 @@ namespace Journaling
         Create,
         Edit,
         Delete,
-        Close
+        Close,
+        OpenProgramFromSave,
+        OpenProgramAsNew,
+        RepairedFromBackup,
+        RepairWasDeclined,
+        ContinuedFromLogs
     }
     public enum EventStatus
     {
         Started,
         Doing,
         Done,
+        Repaired,
+        Declined
 
     }
     public class EventInfo
@@ -57,8 +65,15 @@ namespace Journaling
         {
             return Journal[Journal.FindLastIndex(part => part.FileName == FileName)];
         }
-        public void GetStartedEvents()
+        public EventInfo GetEventByUuid(string uuid)
         {
+            return Journal.Where((valElement) => valElement.Uuid == uuid).ToList()[0];
+
+        }
+        
+        public List<EventInfo> GetStartedEvents()
+        {
+            var res = new List<EventInfo>();
             var Started = Journal.Select((Event) => Event.Uuid).ToList();
             var StartedMap = new HashSet<string>(Started);
 
@@ -67,11 +82,13 @@ namespace Journaling
                 Started.Remove(StartedElement);
                 if(!Started.Exists((val) => val == StartedElement))
                 {
-                    throw new Exception($"Found error with operation {StartedElement}");
+                    res.Add(GetEventByUuid(StartedElement));   
+
                 }
                 
                 
             }
+            return res;
 
         }
     }

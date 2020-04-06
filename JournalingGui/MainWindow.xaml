@@ -1,0 +1,30 @@
+﻿<Window x:Class="JournalingGui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:JournalingGui"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="517.756" Width="573.721">
+    <Grid>
+        <StackPanel HorizontalAlignment="Left" Height="467" Margin="167,10,0,0" VerticalAlignment="Top" Width="142">
+            <Label Content="Операции с файлом
+                   "/>
+            <Button Content="Удалить" Click="Button_Click_1"/>
+            <Label Content="Cоздание новых файлов"/>
+            <TextBox Name="CreatedFileName" BorderThickness="5" Text="Название файла" />
+            <Button Content="Создать" Click="Button_Click"></Button>
+        </StackPanel>
+        <TextBox Name="Contendtext" BorderThickness="5" Text="Название файла" Margin="334,27,10,147" />
+        <Button Content="Сохранить" HorizontalAlignment="Left" Height="35" Margin="385,345,0,0" VerticalAlignment="Top" Width="107" Click="Button_Click_2"/>
+        <ListView Name="FilesList" HorizontalAlignment="Left" Height="450" Margin="10,27,0,0" VerticalAlignment="Top" Width="152" SelectionChanged="FilesList_SelectionChanged">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn x:Name="FileListSub"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+
+    </Grid>
+</Window>
