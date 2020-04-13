@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +14,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Journaling;
+using System.Timers;
+
 namespace JournalingGui
 {
     /// <summary>
@@ -26,6 +29,8 @@ namespace JournalingGui
             InitializeComponent();
             FilesDispatcher = new Dispatcher();
             FilesGridUpdate();
+            
+
         }
         public void FilesGridUpdate()
         {
@@ -46,15 +51,19 @@ namespace JournalingGui
             
                 FilesDispatcher.Create(CreatedFileName.Text,2000);
                 FilesGridUpdate();
-            
-        }
+            FilesDispatcher.CheckLogsCorectness();
+            FilesGridUpdate();
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+
+        }
+        
+            private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             var y = FilesList.SelectedItem;
             FilesDispatcher.Delete(FilesList.SelectedItem.ToString(),2000);
             //FilesList.SelectedIndex = 1;
             FilesGridUpdate();
+            
         }
 
         private void FilesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -77,6 +86,16 @@ namespace JournalingGui
         private void Button_Click_3(object sender, RoutedEventArgs e)
         {
             FilesDispatcher.Summs();
+        }
+
+        private void Button_Click_4(object sender, RoutedEventArgs e)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                FilesDispatcher.Create($"{i}.txt", 1,false);
+                
+            }
+            FilesGridUpdate();
         }
     }
 }

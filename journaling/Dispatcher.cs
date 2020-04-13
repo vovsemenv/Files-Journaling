@@ -209,7 +209,6 @@ namespace Journaling
                         case EventTypes.Delete:
                             {
                                 Journal.AddEvent(err.FileName, err.Type, EventStatus.Repaired, "", err.Uuid);
-                                
                                 Delete(getlast(err.FileName));
                                 Journal.AddEvent(err.FileName, EventTypes.RepairedFromBackup, EventStatus.Started, "Продолжение операции удаления файла");
 
@@ -268,7 +267,7 @@ namespace Journaling
         {
             return $"{ProgramFilesDirectory}/{FileName}";
         }
-        public void Create(String FileName,int freeze=0)
+        public void Create(String FileName,int freeze=0, bool show = true)
         {
             try { 
             var ExectFileName = ExectNameGeneratorFilesDirectory(FileName);
@@ -280,14 +279,27 @@ namespace Journaling
             File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(LOGGING_FILE), JsonConvert.SerializeObject(Journal));
 
             File.WriteAllText(ExectNameGeneratorProgramFilesDirectory(FILES_INFO), JsonConvert.SerializeObject(Files));
+                MessageBoxResult res = MessageBoxResult.Cancel;
+                var th = new Thread(() =>
+                {
+                    res = MessageBox.Show("Прервать создание файла?", "Прерывание", MessageBoxButton.OKCancel);
 
-            Thread.Sleep(freeze);
-            var EventUuid = Journal.GetLastEvent(ExectFileName).Uuid;
+                });
+              
+                th.Start();
+                Thread.Sleep(freeze);
+                th.Abort();
+                th.Join(100);
+                if(res == MessageBoxResult.OK)
+                {
+                    return;
+                }
+             var EventUuid = Journal.GetLastEvent(ExectFileName).Uuid;
             var Created = File.Create(ExectFileName);
             Created.Close();
             Files.Add(FileName, new FileInfo(ExectFileName, DateTime.Now, ComputeMD5Checksum(ExectFileName)));
             Journal.AddEvent(ExectFileName, EventTypes.Create, EventStatus.Done, "Nothing Strange",EventUuid);
-            MessageBox.Show("Done");
+            if(show) MessageBox.Show("Done");
             }
             catch
             {
@@ -302,6 +314,7 @@ namespace Journaling
                 File.Copy(ExectNameGeneratorFilesDirectory(VarFile.Key), ExectNameGeneratorBackupDirectory(VarFile.Key), true);
 
             }
+
         }
         public void Delete(String FileName, int freeze = 0)
         {
