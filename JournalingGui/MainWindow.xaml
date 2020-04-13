@@ -5,25 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JournalingGui"
         mc:Ignorable="d"
-        Title="MainWindow" Height="517.756" Width="573.721">
+        Title="MainWindow" Height="517.756" Width="833.221">
     <Grid>
-        <StackPanel HorizontalAlignment="Left" Height="467" Margin="167,10,0,0" VerticalAlignment="Top" Width="142">
-            <Label Content="Операции с файлом
-                   "/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="88*"/>
+            <RowDefinition Height="399*"/>
+        </Grid.RowDefinitions>
+        <StackPanel HorizontalAlignment="Left" Height="467" Margin="10,0,0,0" VerticalAlignment="Top" Width="142" Grid.RowSpan="2">
+            <Label Content="Операции с файлом                    "/>
             <Button Content="Удалить" Click="Button_Click_1"/>
             <Label Content="Cоздание новых файлов"/>
-            <TextBox Name="CreatedFileName" BorderThickness="5" Text="Название файла" />
-            <Button Content="Создать" Click="Button_Click"></Button>
+            <TextBox x:Name="CreatedFileName" BorderThickness="5" Text="testname.txt" TextChanged="CreatedFileName_TextChanged" />
+            <Button Content="Создать" Click="Button_Click"/>
         </StackPanel>
-        <TextBox Name="Contendtext" BorderThickness="5" Text="Название файла" Margin="334,27,10,147" />
-        <Button Content="Сохранить" HorizontalAlignment="Left" Height="35" Margin="385,345,0,0" VerticalAlignment="Top" Width="107" Click="Button_Click_2"/>
-        <ListView Name="FilesList" HorizontalAlignment="Left" Height="450" Margin="10,27,0,0" VerticalAlignment="Top" Width="152" SelectionChanged="FilesList_SelectionChanged">
+        <TextBox Name="Contendtext" BorderThickness="5" Text="Название файла" Margin="538,27,10,147" Grid.RowSpan="2" />
+        <Button Content="Сохранить" HorizontalAlignment="Left" Height="35" Margin="625,257,0,0" VerticalAlignment="Top" Width="107" Click="Button_Click_2" Grid.Row="1"/>
+        <ListView Name="FilesList" HorizontalAlignment="Left" Height="433" Margin="157,27,0,0" VerticalAlignment="Top" Width="297" SelectionChanged="FilesList_SelectionChanged" Grid.RowSpan="2">
             <ListView.View>
                 <GridView>
                     <GridViewColumn x:Name="FileListSub"/>
                 </GridView>
             </ListView.View>
         </ListView>
+        <Label Content="Файлы" Margin="228,0,455,62"/>
+        <Button Content="Проверка целостности" HorizontalAlignment="Left" Height="35" Margin="625,320,0,0" VerticalAlignment="Top" Width="107" Grid.Row="1" Click="Button_Click_3"/>
 
 
     </Grid>

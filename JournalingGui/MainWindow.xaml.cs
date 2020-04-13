@@ -43,43 +43,40 @@ namespace JournalingGui
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                FilesDispatcher.Create(CreatedFileName.Text,5000);
+            
+                FilesDispatcher.Create(CreatedFileName.Text,2000);
                 FilesGridUpdate();
-            }
-            catch
-            {
-                
-                var res = MessageBox.Show($"Такой файл уже существует Создать файл {CreatedFileName.Text}", "Question", MessageBoxButton.YesNo);
-                if (res==MessageBoxResult.Yes)
-                {
-                    FilesDispatcher.Create($"(Копия){CreatedFileName.Text}");
-                }
-                else
-                {
-
-                }
-                FilesGridUpdate();
-            }
+            
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             var y = FilesList.SelectedItem;
-            FilesDispatcher.Delete(FilesList.SelectedItem.ToString(),5000);
+            FilesDispatcher.Delete(FilesList.SelectedItem.ToString(),2000);
+            //FilesList.SelectedIndex = 1;
             FilesGridUpdate();
         }
 
         private void FilesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (FilesList.SelectedIndex != -1) { 
             Contendtext.Text = FilesDispatcher.Read(FilesList.SelectedItem.ToString());
-
+            }
         }
 
         private void Button_Click_2(object sender, RoutedEventArgs e)
         {
-            FilesDispatcher.Edit(FilesList.SelectedItem.ToString(), Contendtext.Text,3000);
+            FilesDispatcher.Edit(FilesList.SelectedItem.ToString(), Contendtext.Text,2000);
+        }
+
+        private void CreatedFileName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void Button_Click_3(object sender, RoutedEventArgs e)
+        {
+            FilesDispatcher.Summs();
         }
     }
 }
